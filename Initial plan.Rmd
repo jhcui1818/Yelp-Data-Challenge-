@@ -7,7 +7,6 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(RMySQL)
 ```
 ## Topic
 Will the star of given business related to the reviewers' review count and average star?
@@ -24,27 +23,4 @@ To initially explore the data, my plan is to do a plot of user_average_star with
 ## Model
 
 A linear model will be used first, to check whether our hypothesis can be captured by simple linear model. If yes, fit a random effect model see if predictions are improved. If not, fit a multilevel model with category and location of the business as group-level predictor and user as individual-level predictor.
-
-```{r}
-mydb = dbConnect(MySQL(), user='mssp', password='mssp2017', dbname='yelp_db', host='45.63.90.29')
-dbListTables(mydb) 
-
-```
-```{r}
-dbListFields(mydb, 'review')
-review_100.sql = dbSendQuery(mydb, "select * from review limit 100")
-review_100 = fetch(review_100.sql, n = -1)
-
-dbListFields(mydb, 'business')
-business.sql = dbSendQuery(mydb, "select * from business")
-business = fetch(business.sql, n = -1)
-
-dbListFields(mydb, 'category')
-category.sql = dbSendQuery(mydb, "select * from category")
-category = fetch(category.sql, n = -1)
-
-dbListFields(mydb, 'user')
-user.sql = dbSendQuery(mydb, "select * from user")
-user = fetch(user.sql, n = -1)
-```
 
