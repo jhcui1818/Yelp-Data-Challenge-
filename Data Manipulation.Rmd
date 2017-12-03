@@ -1,0 +1,71 @@
+---
+title: "Dataset Manipulation"
+author: "Jinghan Cui"
+date: "12/3/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RMySQL)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+## Data Cleaning
+```{r}
+mydb = dbConnect(MySQL(), user='mssp', password='mssp2017', dbname='yelp_db', host='45.63.90.29')
+dbListTables(mydb) 
+
+```
+```{r}
+# retrive data from SQL dataset
+
+dbListFields(mydb, 'review')
+review.sql = dbSendQuery(mydb, "select stars,business_id, user_id from review")
+review = fetch(review.sql, n = -1)
+
+dbListFields(mydb, 'business')
+business.sql = dbSendQuery(mydb, "select * from business")
+business = fetch(business.sql, n = -1)
+
+dbListFields(mydb, 'category')
+category.sql = dbSendQuery(mydb, "select * from category")
+category = fetch(category.sql, n = -1)
+
+dbListFields(mydb, 'user')
+user.sql = dbSendQuery(mydb, "select id, name, review_count, useful, fans, average_stars from user")
+user = fetch(user.sql, n = -1)
+```
+
+```{r}
+# prepare business dataset for merging
+business2 <- business %>%
+  dplyr::select(id, name, state, stars, review_count, is_open)
+colnames(business2)[1] <- "business_id"
+colnames(business2)[2] <- "store_name"
+colnames(business2)[4] <- "store_stars"
+colnames(business2)[5] <- "store_review_count"
+
+# prepare user dataset for merging
+colnames(user)[1] <- "user_id"
+
+# assign unique id to user as some of the users have same name.
+user$makeup_id <- c(1:length(user$user_id))
+
+# merge review, category, user and business
+merged1 <- left_join(review, category, by = "business_id")
+merged2 <- left_join(merged1, user, by = "user_id")
+merged3 <- left_join(merged2, business2, by = "business_id")
+
+# as I am interested in the rating of restaurants, I will only use the data of restaurants
+Bars <- merged3 %>% 
+  dplyr::filter(category == "Bars")
+write.csv(Bars, "bars.csv")
+```
+
+
+
+
+
