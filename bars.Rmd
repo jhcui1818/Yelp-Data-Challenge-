@@ -1,0 +1,84 @@
+---
+title: "restaurant"
+author: "Jinghan Cui"
+date: "12/1/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(GGally)
+library(lme4)
+library(rstanarm)
+```
+
+## Data Cleaning
+```{r}
+bars <- read.csv("bars.csv")
+ggplot(bars, aes(x = store_stars, y = store_review_count))+
+  geom_jitter(color = "light blue")
+ggplot(bars, aes(x = stars, y = review_count))+
+  geom_jitter(color = "light blue")
+bars_reduced <- bars %>%
+  filter(review_count >50,review_count<9000, store_review_count>200, store_review_count<3000)
+
+ggplot(bars_p1, aes(x = stars, y = review_count))+
+  geom_jitter(color = "light blue")
+
+bars.v2 <- bars_reduced[, c(-1,-3,-4)]
+bars.v3 <- bars.v2[,c(1,8,3,4,5,6,7,9,11,12,13,10)]
+bars.v3 <- bars.v3[order(bars.v3$makeup_id),]
+
+bars.v3$is_open <- as.factor(bars.v3$is_open)
+bars.v3$stars <- as.factor(bars.v3$stars)
+
+bars.v3$useful_pct <- bars.v3$useful/bars.v3$review_count
+bars.v3$review_count_c <- (bars.v3$review_count-mean(bars.v3$review_count))/sd(bars.v3$review_count)
+bars.v3$fans_c <- (bars.v3$fans-mean(bars.v3$fans))/sd(bars.v3$fans)
+bars.v3$store_review_count_c <- (bars.v3$store_review_count-mean(bars.v3$store_review_count))/sd(bars.v3$store_review_count)
+
+```
+
+
+## EDA
+```{r}
+sample_store_bars <- bars.v3 %>%
+  filter(store_review_count <5000, store_review_count >2500)
+
+# check correlations within predictor variables
+ggpairs(sample_bars[, c("review_count","useful_pct","fans","average_stars", "store_review_count")])
+# we may want to drop fans as it is highly correlated with review_count
+```
+
+```{r}
+ggplot(sample_store_bars, aes(x = store_name, y = stars)) +
+  stat_sum(aes(size = ..n.., group = 1)) 
+
+ggplot(sample_bars, aes(x = is_open, y = stars)) +
+  stat_sum(aes(size = ..n.., group = 1)) 
+
+ggplot(sample_bars,  aes(x = stars, y = review_count)) +
+  geom_jitter(alpha = .1) +
+  geom_violin(alpha = .75) +
+  scale_y_sqrt()
+```
+
+
+## Multilevel Model
+```{r}
+sample_user_bars <- bars.v3 %>%
+  filter(makeup_id <100)
+fit <- glmer(factor(stars) ~ review_count_c + useful_pct + fans_c + average_stars + store_review_count_c + (1|store_name) + (1|makeup_id), data = sample_user_bars, family = binomial,control=glmerControl(optimizer="bobyqa"))
+summary(fit)
+print(fit, corr = FALSE)
+
+se <- sqrt(diag(vcov(fit)))
+# table of estimates with 95% CI
+(tab <- cbind(Est = fixef(fit), LL = fixef(fit) - 1.96 * se, UL = fixef(fit) + 1.96 * se))
+
+
+```
+
