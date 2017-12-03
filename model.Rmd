@@ -47,8 +47,8 @@ bars.v3$useful_pct_c <- (bars.v3$useful_pct-mean(bars.v3$useful_pct))/sd(bars.v3
 
 ```
 
-### 2. Model1
-## 2.1 Variable Selection
+## 2. Model1
+### 2.1 Variable Selection
 ```{r}
 sample_store_bars <- bars.v3 %>%
   filter(store_review_count <2500, store_review_count >2000)
@@ -57,7 +57,7 @@ ggpairs(sample_store_bars[, c("review_count","useful_pct","fans","average_stars"
 # we may want to drop fans as it is highly correlated with review_count
 ```
 
-## 2.2 EDA
+### 2.2 EDA
 ```{r}
 # the sampled restaurants have same store_stars while the plot shows a different distribution of reveiw stars per restaurant
 ggplot(sample_store_bars, aes(x = store_name, y = stars)) +
@@ -71,7 +71,7 @@ ggplot(sample_store_bars, aes(x=stars, y = average_stars, fill = stars)) +
 
 
 
-## 2.3 Multilevel Model
+### 2.3 Multilevel Model
 ```{r}
 # not including store_review_count because we sample the data by store review count
 fit1 <- glmer(factor(stars) ~ review_count_c + useful_pct + average_stars + (1|makeup_id), data = sample_store_bars, family = binomial,control=glmerControl(optimizer="bobyqa"))
@@ -84,8 +84,8 @@ se1 <- sqrt(diag(vcov(fit1)))
 ```
 
 
-### 3. Model2
-## 3.1 Variable Selection
+## 3. Model2
+### 3.1 Variable Selection
 ```{r}
 # our data set has too many different users thus we sample the users with a makeup_id smaller than 1000.
 sample_user_bars <- bars.v3 %>%
@@ -94,7 +94,7 @@ sample_user_bars <- bars.v3 %>%
 ggpairs(sample_user_bars[, c("review_count","useful_pct","fans","average_stars", "store_review_count")])
 # we may want to drop fans as it is highly correlated with review_count, as well as useful_pct
 ```
-## 3.2 EDA
+### 3.2 EDA
 ```{r}
 # most of the user give scores of 4 or 5 to bars
 ggplot(sample_user_bars, aes(x = factor(makeup_id), y = stars)) +
@@ -105,7 +105,7 @@ ggplot(sample_user_bars, aes(x=stars, y =store_review_count_c, fill = stars)) +
   facet_wrap(~factor(makeup_id))
 ```
 
-## 3.3 Multilevel Model
+### 3.3 Multilevel Model
 
 ```{r}
 sample_user_bars$makeup_id <- factor(sample_user_bars$makeup_id)
@@ -131,7 +131,7 @@ ggplot(fit.X, aes(fit.x, fit.y)) +
     labs(x = "stars", y = "freqhency")
 ```
 
-### Discussion
+## Discussion
 Althgough from the summary of our model that the coefficients are significant, the prediction plots show otherwise. I think this is due to the limitation of data size. My laptop is not able to process such a large size of levels. There are millions of users and business in the dataset and we build the model by sampling. 
 
 
